@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Lavadero</title>
+<meta name="theme-color" content="#22282E" />
+<link rel="manifest" href="./manifest.json" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<link rel="icon" href="./icon-192.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#FAF7F2;
+    --card-bg:#FFFFFF;
+    --ink:#22282E;
+    --ink-soft:#5B6470;
+    --line:#CBD0D3;
+    --libre:#3F8F7A;
+    --libre-bg:#E7F1EE;
+    --ocupada:#C1453B;
+    --ocupada-bg:#F7E9E7;
+    --accent:#E8B83D;
+    --radius:18px;
+    --maxw:480px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:88px;
+  }
+  .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 18px; }
+
+  /* header */
+  header.app-header{
+    padding:28px 18px 18px;
+    max-width:var(--maxw);
+    margin:0 auto;
+  }
+  .grommets{ display:flex; gap:6px; margin-bottom:10px; }
+  .grommets span{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--line);
+  }
+  .grommets span.live{
+    background:var(--libre);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .grommets span.live{ animation:none; }
+  }
+  @keyframes pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0.35; }
+  }
+  h1.title{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size:42px;
+    letter-spacing:0.5px;
+    margin:0;
+    line-height:0.95;
+    text-transform:uppercase;
+  }
+  p.subtitle{
+    margin:6px 0 0;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  #edificioLabel{ border-bottom:1px dashed var(--line); cursor:text; }
+
+  /* views */
+  main{ max-width:var(--maxw); margin:0 auto; padding:6px 18px 24px; }
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  /* machine card, styled like a care-label tag */
+  .card{
+    position:relative;
+    background:var(--card-bg);
+    border:2px dashed var(--line);
+    border-radius:var(--radius);
+    padding:22px 20px 20px;
+    margin-bottom:18px;
+  }
+  .card .hole{
+    position:absolute;
+    top:-11px; left:24px;
+    width:20px; height:20px;
+    background:var(--bg);
+    border:2px dashed var(--line);
+    border-radius:50%;
+  }
+  .card-top{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-bottom:12px;
+  }
+  .machine-name{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size:26px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .badge{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    padding:5px 12px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  .badge.libre{ background:var(--libre-bg); color:var(--libre); }
+  .badge.ocupada{ background:var(--ocupada-bg); color:var(--ocupada); }
+
+  .occupant-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    color:var(--ink-soft);
+    margin:0 0 14px;
+  }
+  .occupant-line b{ color:var(--ink); font-weight:600; }
+
+  .row{ display:flex; gap:10px; }
+  input.depto-input{
+    flex:1;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:15px;
+    padding:12px 14px;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    background:var(--bg);
+    color:var(--ink);
+    text-transform:uppercase;
+  }
+  input.depto-input::placeholder{ text-transform:none; color:#9aa3aa; }
+  input.depto-input:focus-visible, button:focus-visible{
+    outline:2.5px solid var(--accent);
+    outline-offset:1px;
+  }
+
+  button.btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:15px;
+    border:none;
+    border-radius:12px;
+    padding:12px 18px;
+    background:var(--ink);
+    color:var(--bg);
+    cursor:pointer;
+    transition:transform 0.08s ease;
+  }
+  button.btn:active{ transform:scale(0.97); }
+  button.btn:disabled{ opacity:0.5; cursor:default; }
+  button.btn.full{ width:100%; }
+
+  /* historial */
+  .hist-empty{
+    text-align:center;
+    color:var(--ink-soft);
+    padding:50px 20px;
+    font-size:15px;
+  }
+  .hist-row{
+    display:flex; justify-content:space-between; align-items:baseline; gap:14px;
+    padding:14px 4px;
+    border-bottom:1px dashed var(--line);
+  }
+  .hist-row:last-child{ border-bottom:none; }
+  .hist-text{ font-size:15px; }
+  .hist-text b{ font-weight:600; }
+  .hist-time{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+
+  /* bottom tab bar */
+  nav.tabbar{
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--card-bg);
+    border-top:1.5px solid var(--line);
+    display:flex;
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav.tabbar button{
+    flex:1;
+    background:none; border:none;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink-soft);
+    padding:14px 0 12px;
+    cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  nav.tabbar button.active{ color:var(--ink); }
+  nav.tabbar svg{ width:22px; height:22px; }
+
+  /* toast */
+  #toast{
+    position:fixed;
+    bottom:96px; left:50%;
+    transform:translateX(-50%) translateY(10px);
+    background:var(--ink); color:var(--bg);
+    font-size:14px;
+    padding:11px 18px;
+    border-radius:12px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.2s ease, transform 0.2s ease;
+    max-width:90%;
+    text-align:center;
+    z-index:50;
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .config-warning{
+    background:var(--ocupada-bg);
+    color:var(--ocupada);
+    border-radius:12px;
+    padding:14px 16px;
+    font-size:14px;
+    margin-bottom:18px;
+    line-height:1.4;
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="grommets"><span class="live" id="liveDot"></span><span></span><span></span></div>
+  <h1 class="title">Lavadero</h1>
+  <p class="subtitle"><span id="edificioLabel" contenteditable="false">Estado en vivo, sin papeles</span></p>
+</header>
+
+<main>
+  <div id="configWarning" class="config-warning" style="display:none;">
+    Falta conectar la base de datos: pegá los datos de tu proyecto Firebase en el bloque <b>CONFIGURACIÓN</b> de index.html.
+  </div>
+
+  <section id="view-estado" class="view active">
+    <div class="card" data-machine="lavadora">
+      <div class="hole"></div>
+      <div class="card-top">
+        <span class="machine-name">Lavadora</span>
+        <span class="badge libre" data-badge>LIBRE</span>
+      </div>
+      <p class="occupant-line" data-occupant style="display:none;"></p>
+      <div data-form-libre>
+        <div class="row">
+          <input class="depto-input" type="text" maxlength="8" placeholder="Tu piso, ej 7A" data-input>
+          <button class="btn" data-action="iniciar">Iniciar</button>
+        </div>
+      </div>
+      <div data-form-ocupada style="display:none;">
+        <button class="btn full" data-action="liberar">Liberar lavadora</button>
+      </div>
+    </div>
+
+    <div class="card" data-machine="secadora">
+      <div class="hole"></div>
+      <div class="card-top">
+        <span class="machine-name">Secadora</span>
+        <span class="badge libre" data-badge>LIBRE</span>
+      </div>
+      <p class="occupant-line" data-occupant style="display:none;"></p>
+      <div data-form-libre>
+        <div class="row">
+          <input class="depto-input" type="text" maxlength="8" placeholder="Tu piso, ej 7A" data-input>
+          <button class="btn" data-action="iniciar">Iniciar</button>
+        </div>
+      </div>
+      <div data-form-ocupada style="display:none;">
+        <button class="btn full" data-action="liberar">Liberar secadora</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-historial" class="view">
+    <div id="histList"></div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<nav class="tabbar">
+  <button class="active" data-tab="estado">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M8.5 10 a3.5 3.5 0 0 0 7 0" stroke-linecap="round"/></svg>
+    Estado
+  </button>
+  <button data-tab="historial">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h12" stroke-linecap="round"/></svg>
+    Historial
+  </button>
+</nav>
+
+<script type="module">
+  /* ============================================================
+     CONFIGURACIÓN — PEGÁ ACÁ LOS DATOS DE TU PROYECTO FIREBASE
+     (Firebase console > Configuración del proyecto > Tus apps > SDK)
+     ============================================================ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyC8zqfzNkxr-bcQICdVzgV9w5cLm63K6wY",
+    authDomain: "laundry-costa-rica.firebaseapp.com",
+    projectId: "laundry-costa-rica",
+    storageBucket: "laundry-costa-rica.firebasestorage.app",
+    messagingSenderId: "970508147576",
+    appId: "1:970508147576:web:9e790c222d14b1a29a868d"
+  };
+  /* ============================================================ */
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+  import {
+    getFirestore, doc, getDoc, setDoc, onSnapshot,
+    collection, query, orderBy, limit, serverTimestamp, runTransaction
+  } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+  const isConfigured = !Object.values(firebaseConfig).some(v => v.startsWith("PEGAR_"));
+  if (!isConfigured) {
+    document.getElementById("configWarning").style.display = "block";
+  }
+
+  let db = null;
+  if (isConfigured) {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+  }
+
+  const MACHINES = [
+    { id: "lavadora", nombre: "Lavadora" },
+    { id: "secadora", nombre: "Secadora" }
+  ];
+
+  // ---------- tabs ----------
+  document.querySelectorAll("nav.tabbar button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("nav.tabbar button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+      document.getElementById("view-" + btn.dataset.tab).classList.add("active");
+    });
+  });
+
+  // ---------- toast ----------
+  let toastTimer = null;
+  function showToast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+  }
+
+  // ---------- elapsed time ----------
+  function tiempoTranscurrido(fecha) {
+    if (!fecha) return "";
+    const ms = Date.now() - fecha.getTime();
+    const min = Math.max(0, Math.round(ms / 60000));
+    if (min < 1) return "recién empezó";
+    if (min < 60) return `hace ${min} min`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return `hace ${h}h ${m}min`;
+  }
+
+  const machineState = {};
+
+  function renderMachine(id) {
+    const card = document.querySelector(`.card[data-machine="${id}"]`);
+    const data = machineState[id];
+    if (!card || !data) return;
+
+    const badge = card.querySelector("[data-badge]");
+    const occupantLine = card.querySelector("[data-occupant]");
+    const formLibre = card.querySelector("[data-form-libre]");
+    const formOcupada = card.querySelector("[data-form-ocupada]");
+
+    if (data.estado === "OCUPADA") {
+      badge.textContent = "OCUPADA";
+      badge.className = "badge ocupada";
+      occupantLine.style.display = "block";
+      const desde = data.desde ? data.desde.toDate() : null;
+      occupantLine.innerHTML = `En uso por <b>${escapeHtml(data.usuarioActual || "?")}</b> · ${tiempoTranscurrido(desde)}`;
+      formLibre.style.display = "none";
+      formOcupada.style.display = "block";
+    } else {
+      badge.textContent = "LIBRE";
+      badge.className = "badge libre";
+      occupantLine.style.display = "none";
+      formLibre.style.display = "block";
+      formOcupada.style.display = "none";
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  // refresh "hace X min" labels periodically without needing new data
+  setInterval(() => MACHINES.forEach(m => renderMachine(m.id)), 60000);
+
+  async function ensureSeed() {
+    for (const m of MACHINES) {
+      const ref = doc(db, "maquinas", m.id);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        await setDoc(ref, { nombre: m.nombre, estado: "LIBRE", usuarioActual: "", desde: null });
+      }
+    }
+  }
+
+  function listenMachines() {
+    MACHINES.forEach(m => {
+      const ref = doc(db, "maquinas", m.id);
+      onSnapshot(ref, snap => {
+        if (snap.exists()) {
+          machineState[m.id] = snap.data();
+          renderMachine(m.id);
+        }
+      });
+    });
+  }
+
+  function listenHistorial() {
+    const q = query(collection(db, "historial"), orderBy("fecha", "desc"), limit(50));
+    onSnapshot(q, snap => {
+      const list = document.getElementById("histList");
+      if (snap.empty) {
+        list.innerHTML = `<p class="hist-empty">Todavía no hay movimientos.<br>Cuando alguien empiece a lavar, va a aparecer acá.</p>`;
+        return;
+      }
+      list.innerHTML = "";
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const row = document.createElement("div");
+        row.className = "hist-row";
+        const verbo = d.accion === "Inicio" ? "empezó a usar la" : "liberó la";
+        const fecha = d.fecha ? d.fecha.toDate() : null;
+        const fechaTxt = fecha ? fecha.toLocaleString("es-AR", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "";
+        row.innerHTML = `
+          <span class="hist-text"><b>${escapeHtml(d.vecino || "?")}</b> ${verbo} ${String(d.maquina || "").toLowerCase()}</span>
+          <span class="hist-time">${fechaTxt}</span>
+        `;
+        list.appendChild(row);
+      });
+    });
+  }
+
+  // ---------- depto memory (localStorage, just a personalization nicety) ----------
+  const STORAGE_KEY = "lavadero_depto";
+  function getSavedDepto() { return localStorage.getItem(STORAGE_KEY) || ""; }
+  function saveDepto(v) { localStorage.setItem(STORAGE_KEY, v); }
+
+  document.querySelectorAll("[data-input]").forEach(input => {
+    input.value = getSavedDepto();
+  });
+
+  // ---------- actions ----------
+  document.querySelectorAll('[data-action="iniciar"]').forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const card = btn.closest(".card");
+      const id = card.dataset.machine;
+      const nombre = MACHINES.find(m => m.id === id).nombre;
+      const input = card.querySelector("[data-input]");
+      const depto = input.value.trim().toUpperCase();
+
+      if (!depto) {
+        showToast("Escribí tu piso y depto antes de iniciar.");
+        input.focus();
+        return;
+      }
+      btn.disabled = true;
+      try {
+        await runTransaction(db, async (tx) => {
+          const ref = doc(db, "maquinas", id);
+          const snap = await tx.get(ref);
+          if (snap.data().estado === "OCUPADA") {
+            throw new Error("OCUPADA");
+          }
+          const histRef = doc(collection(db, "historial"));
+          tx.set(histRef, { fecha: serverTimestamp(), vecino: depto, maquina: nombre, accion: "Inicio" });
+          tx.update(ref, { estado: "OCUPADA", usuarioActual: depto, desde: serverTimestamp() });
+        });
+        saveDepto(depto);
+        showToast(`${nombre} marcada como en uso.`);
+      } catch (e) {
+        if (e.message === "OCUPADA") {
+          showToast("Justo se ocupó. Actualizá y probá de nuevo.");
+        } else {
+          showToast("No se pudo conectar. Revisá tu conexión.");
+        }
+      }
+      btn.disabled = false;
+    });
+  });
+
+  document.querySelectorAll('[data-action="liberar"]').forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const card = btn.closest(".card");
+      const id = card.dataset.machine;
+      const nombre = MACHINES.find(m => m.id === id).nombre;
+      btn.disabled = true;
+      try {
+        await runTransaction(db, async (tx) => {
+          const ref = doc(db, "maquinas", id);
+          const snap = await tx.get(ref);
+          const data = snap.data();
+          if (data.estado !== "OCUPADA") {
+            throw new Error("YA_LIBRE");
+          }
+          const histRef = doc(collection(db, "historial"));
+          tx.set(histRef, { fecha: serverTimestamp(), vecino: data.usuarioActual, maquina: nombre, accion: "Fin" });
+          tx.update(ref, { estado: "LIBRE", usuarioActual: "", desde: null });
+        });
+        showToast(`${nombre} liberada. Gracias!`);
+      } catch (e) {
+        showToast("No se pudo conectar. Revisá tu conexión.");
+      }
+      btn.disabled = false;
+    });
+  });
+
+  // ---------- boot ----------
+  if (isConfigured) {
+    ensureSeed().then(() => {
+      listenMachines();
+      listenHistorial();
+    });
+  }
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
