@@ -178,19 +178,47 @@
     padding:50px 20px;
     font-size:15px;
   }
-  .hist-row{
-    display:flex; justify-content:space-between; align-items:baseline; gap:14px;
-    padding:14px 4px;
-    border-bottom:1px dashed var(--line);
+  .hist-group-title{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size:20px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin:24px 0 8px;
+    display:flex; align-items:center; gap:10px;
   }
-  .hist-row:last-child{ border-bottom:none; }
-  .hist-text{ font-size:15px; }
-  .hist-text b{ font-weight:600; }
+  .hist-group-title:first-child{ margin-top:4px; }
+  .hist-group-title .dot{
+    width:10px; height:10px; border-radius:50%; flex-shrink:0;
+  }
+  .hist-group-title .dot.lav{ background:var(--libre); }
+  .hist-group-title .dot.sec{ background:var(--accent); }
+  .hist-row{
+    display:flex; justify-content:space-between; align-items:center; gap:14px;
+    padding:12px 14px;
+    background:var(--card-bg);
+    border-radius:12px;
+    margin-bottom:6px;
+  }
+  .hist-left{ display:flex; flex-direction:column; gap:2px; }
+  .hist-depto{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:15px;
+    color:var(--ink);
+  }
+  .hist-accion{
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .hist-accion.inicio{ color:var(--libre); }
+  .hist-accion.fin{ color:var(--ocupada); }
   .hist-time{
     font-family:'IBM Plex Mono', monospace;
     font-size:12px;
     color:var(--ink-soft);
     white-space:nowrap;
+    text-align:right;
   }
 
   /* bottom tab bar */
@@ -285,7 +313,7 @@
           <option value="6B">6B</option>
           <option value="7A">7A</option>
           <option value="7B">7B</option>
-          <option value="8A">8A</option>
+          <option value="OCHOA">OCHOA</option>
         </select>
           <button class="btn" data-action="iniciar">Iniciar</button>
         </div>
@@ -320,7 +348,7 @@
           <option value="6B">6B</option>
           <option value="7A">7A</option>
           <option value="7B">7B</option>
-          <option value="8A">8A</option>
+          <option value="OCHOA">OCHOA</option>
         </select>
           <button class="btn" data-action="iniciar">Iniciar</button>
         </div>
@@ -477,26 +505,59 @@
   }
 
   function listenHistorial() {
-    const q = query(collection(db, "historial"), orderBy("fecha", "desc"), limit(50));
+    const q = query(collection(db, "historial"), orderBy("fecha", "desc"), limit(100));
     onSnapshot(q, snap => {
       const list = document.getElementById("histList");
       if (snap.empty) {
         list.innerHTML = `<p class="hist-empty">Todavía no hay movimientos.<br>Cuando alguien empiece a lavar, va a aparecer acá.</p>`;
         return;
       }
-      list.innerHTML = "";
+
+      // separate into two groups
+      const grupos = { Lavadora: [], Secadora: [] };
       snap.forEach(docSnap => {
         const d = docSnap.data();
-        const row = document.createElement("div");
-        row.className = "hist-row";
-        const verbo = d.accion === "Inicio" ? "empezó a usar la" : "liberó la";
-        const fecha = d.fecha ? d.fecha.toDate() : null;
-        const fechaTxt = fecha ? fecha.toLocaleString("es-AR", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "";
-        row.innerHTML = `
-          <span class="hist-text"><b>${escapeHtml(d.vecino || "?")}</b> ${verbo} ${String(d.maquina || "").toLowerCase()}</span>
-          <span class="hist-time">${fechaTxt}</span>
-        `;
-        list.appendChild(row);
+        const key = d.maquina === "Lavadora" ? "Lavadora" : "Secadora";
+        grupos[key].push(d);
+      });
+
+      list.innerHTML = "";
+
+      const machineConfig = [
+        { key: "Lavadora", dotClass: "lav" },
+        { key: "Secadora", dotClass: "sec" }
+      ];
+
+      machineConfig.forEach(({ key, dotClass }) => {
+        const rows = grupos[key];
+        const title = document.createElement("div");
+        title.className = "hist-group-title";
+        title.innerHTML = `<span class="dot ${dotClass}"></span>${key}`;
+        list.appendChild(title);
+
+        if (rows.length === 0) {
+          const empty = document.createElement("p");
+          empty.style.cssText = "color:var(--ink-soft);font-size:14px;padding:6px 4px 12px;margin:0;";
+          empty.textContent = "Sin movimientos aún.";
+          list.appendChild(empty);
+          return;
+        }
+
+        rows.forEach(d => {
+          const row = document.createElement("div");
+          row.className = "hist-row";
+          const esInicio = d.accion === "Inicio";
+          const fecha = d.fecha ? d.fecha.toDate() : null;
+          const fechaTxt = fecha ? fecha.toLocaleString("es-AR", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "";
+          row.innerHTML = `
+            <div class="hist-left">
+              <span class="hist-depto">${escapeHtml(d.vecino || "?")}</span>
+              <span class="hist-accion ${esInicio ? 'inicio' : 'fin'}">${esInicio ? "▶ Inicio" : "■ Fin"}</span>
+            </div>
+            <span class="hist-time">${fechaTxt}</span>
+          `;
+          list.appendChild(row);
+        });
       });
     });
   }
